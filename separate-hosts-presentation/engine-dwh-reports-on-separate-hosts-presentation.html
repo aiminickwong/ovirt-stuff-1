@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+ "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <title></title>
+  <link rel="stylesheet" type="text/css" media="screen, projection, print"
+    href="http://www.w3.org/Talks/Tools/Slidy2/styles/slidy.css" />
+  <link rel="stylesheet" type="text/css" media="screen, projection, print"
+   href="ovirt-slidy.css" />
+  <script src="http://www.w3.org/Talks/Tools/Slidy2/scripts/slidy.js.gz"
+    charset="utf-8" type="text/javascript"></script>
+</head>
+<body>
+<div class="background">
+    <object id="head-logo" data="ovirt-logo.svg" type="image/svg+xml" title="oVirt logo">
+        <a href="http://www.ovirt.org/"><img alt="oVirt logo" id="head-logo-fallback" src="ovirt-logo.gif" /></a>
+    </object>
+</div>
+<div class="section titleslide slide level1" id="enginedwhreports-on-separate-hosts"><h1>Engine/DWH/Reports on Separate Hosts</h1></div><div class="section slide level2" id="overview">
+<h1>Overview</h1>
+<p>Allow setting up Engine/DWH/Reports on separate hosts</p>
+</div><div class="section slide level2" id="useful-links">
+<h1>Useful Links</h1>
+<p>Feature pages:</p>
+<ul>
+<li><a href="http://www.ovirt.org/Features/Separate-DWH-Host">Separate-DWH-Host</a></li>
+<li><a href="http://www.ovirt.org/Features/Separate-Reports-Host">Separate-Reports-Host</a></li>
+</ul>
+<p>This presentation:</p>
+<ul>
+<li><a href="http://www.ovirt.org/Features/Separate-Reports-Host#Presentation">Separate-Reports-Host#Presentation</a></li>
+</ul>
+</div><div class="section slide level2" id="why">
+<h1>Why?</h1>
+<ul>
+<li><p>Load distribution</p>
+<p>In particular, to keep the engine from suffering potentially high load sometimes imposed by DWH and/or Reports.</p></li>
+<li><p>Other? TODO</p>
+<ul>
+<li><p>Security</p></li>
+<li><p>Control and flexibility</p></li>
+</ul></li>
+</ul>
+</div><div class="section slide level2" id="historic-perspective---3.2">
+<h1>Historic Perspective - 3.2</h1>
+<ul>
+<li><p>3.2 had mostly-monolithic setup scripts for engine/dwh/reports</p></li>
+<li><p>dwh and reports had to be setup after the engine was, on same host, and relied on it</p></li>
+</ul>
+</div><div class="section slide level2" id="historic-perspective---3.3">
+<h1>Historic Perspective - 3.3</h1>
+<ul>
+<li><p>engine-setup was rewritten base on <a href="http://www.ovirt.org/Features/Otopi_Infra_Migration">Otopi</a></p></li>
+<li><p>setup of dwh and reports got more features and became more complex, but basic structure remained the same</p></li>
+</ul>
+</div><div class="section slide level2" id="historic-perspective---3.4">
+<h1>Historic Perspective - 3.4</h1>
+<ul>
+<li><p>dwh and reports setup were completely rewritten, to become plugins of engine-setup, instead of being independent utilities.</p></li>
+<li><p>Thus, a single invocation of engine-setup sets up or upgrades whatever that is installed (by yum).</p></li>
+<li><p>Functionality remained mostly the same, where dwh and reports rely upon the engine configuration and infrastructure</p></li>
+<li><p>This required also a large change in the setup code of the engine, which became more modular and was split to several different packages.</p></li>
+</ul>
+</div><div class="section slide level2" id="what-changed">
+<h1>What changed</h1>
+<p>To allow setting up the engine, dwh and reports on separate hosts, various changes were required, mostly in the setup code of the various components:</p>
+<ul>
+<li><p>Engine</p></li>
+<li><p>DWH</p></li>
+<li><p>Reports</p></li>
+</ul>
+</div><div class="section slide level2" id="what-changed-in-the-engine">
+<h1>What changed in the engine</h1>
+<ul>
+<li><p>Cleanups of existing mostly-separable code</p>
+<p>E.g. removing unneeded dependencies, moving plugins between packages.</p></li>
+<li><p>Making the engine itself optional</p>
+<p><code>Configure Engine on this host (Yes, No) [Yes]:</code></p>
+<p>so that if engine setup plugin is installed, user can still choose to not configure it. dwh/reports were already optional</p></li>
+</ul>
+</div><div class="section slide level2" id="what-changed-in-the-engine-2">
+<h1>What changed in the engine 2</h1>
+<ul>
+<li><p>Make postgresql listen on outside network</p></li>
+<li><p>Database credentials</p>
+<ul>
+<li><p>First all components query for their own, then all query for those they use, if not already supplied</p></li>
+<li><p>Refactored out the code asking these questions, to be useable by dwh/reports</p></li>
+</ul></li>
+</ul>
+</div><div class="section slide level2" id="what-changed-in-dwh">
+<h1>What changed in DWH</h1>
+<ul>
+<li><p>Make setup code not rely on engine code, e.g.</p>
+<ul>
+<li>do not use constants from the engine</li>
+<li>ask for engine db credentials if needed</li>
+</ul></li>
+<li><p>Verify that Engine and DWH versions are compatible</p>
+<ul>
+<li>Already done in 3.3 and before</li>
+<li>Dropped in 3.4, as they were upgraded at once</li>
+<li>Now needed again, can be on different hosts</li>
+</ul></li>
+<li><p>Prevent two DWH instances to work against a single engine (not merged yet)</p></li>
+</ul>
+</div><div class="section slide level2" id="what-changed-in-reports">
+<h1>What changed in Reports</h1>
+<ul>
+<li><p>Ask for both engine and DWH db credentials, if needed.</p></li>
+<li><p>Set our own instance of jboss instead of adding ourself as an app to the jboss instance of the engine. Even if on same host.</p></li>
+<li><p>Set apache to proxy to us, similarly to the engine. Only if not on same host as engine.</p></li>
+<li><p>Therefore, we need our own pki, which is currently quite complex to <a href="http://www.ovirt.org/Features/Separate-Reports-Host#PKI">set up</a>.</p></li>
+</ul>
+</div><div class="section slide level2" id="todo">
+<h1>TODO</h1>
+<ul>
+<li><p>More clean up... e.g., hide engine-private data that is currently shared</p></li>
+<li><p>Make reports pki setup more comfortable</p></li>
+</ul>
+</div><div class="section slide level2" id="questions">
+<h1>Questions?</h1>
+</div>
+</body>
+</html>

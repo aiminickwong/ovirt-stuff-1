@@ -1,0 +1,5 @@
+<div class="background">
+    <object id="head-logo" data="ovirt-logo.svg" type="image/svg+xml" title="oVirt logo">
+        <a href="http://www.ovirt.org/"><img alt="oVirt logo" id="head-logo-fallback" src="ovirt-logo.gif" /></a>
+    </object>
+</div>
